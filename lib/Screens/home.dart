@@ -42,6 +42,7 @@ class _HomePageState extends State<HomePage> {
             itemCount: list.length,
             itemBuilder: (context, index) {
               final item = list[index] as Map ;
+              final id = item['_id'];
                 return ListTile(
                   leading: CircleAvatar(
                     child: Text("${index+1}"),
@@ -49,15 +50,26 @@ class _HomePageState extends State<HomePage> {
                   title: Text(item['title']),
                   subtitle: Text(item['description']),
                   trailing: PopupMenuButton(
-                    onSelected: (value) {
+                    onSelected: (value) async {
                       if(value == 'edit')
                         {
-
+                            
                         }
 
                       if(value == 'delete')
                         {
-
+                          if(await deleteTodo(id))
+                          {
+                            final filtered = list.where((element) => element['_id'] != id).toList();
+                            setState(() {
+                              list = filtered;
+                              showSuccessMessage("Todo Deleted Successfully");
+                            });
+                          }
+                          else
+                          {
+                            showSuccessMessage("Failed to delete the Todo");
+                          }
                         }
                     },
                     itemBuilder: (context) {
@@ -83,6 +95,26 @@ class _HomePageState extends State<HomePage> {
       builder: (context) => Add(),
     );
     Navigator.push(context, route);
+  }
+  
+  Future<bool> deleteTodo(String id) async{
+    final response = await http.delete(Uri.parse("https://api.nstack.in/v1/todos/$id"));
+    final json = jsonDecode(response.body);
+    print(response.body);
+    if(response.statusCode==200)
+      {
+        return true ;
+      }
+    else
+      {
+        return false ;
+      }
+  }
+
+  void showSuccessMessage( String message)
+  {
+    final snackBar = SnackBar(content: Text(message));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   Future<void> getAllData() async {
